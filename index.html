@@ -353,20 +353,6 @@
 
         .empty-state .icon { font-size: 3rem; margin-bottom: 0.5rem; }
 
-        .delete-btn {
-            background: none;
-            border: none;
-            color: #e53e3e;
-            cursor: pointer;
-            font-size: 0.78rem;
-            opacity: 0;
-            transition: opacity 0.2s;
-            padding: 0.2rem 0.4rem;
-            border-radius: 4px;
-        }
-
-        .idea-card:hover .delete-btn { opacity: 0.6; }
-        .delete-btn:hover { opacity: 1 !important; background: #fff5f5; }
 
 
         .sort-select {
@@ -617,7 +603,6 @@
                         '<button class="vote-btn ' + (isVoted ? 'voted' : '') + '" onclick="toggleVote(\'' + idea.id + '\')">' +
                             '👍 <span class="vote-count">' + idea.votes + '</span>' +
                         '</button>' +
-                        '<button class="delete-btn" onclick="deleteIdea(\'' + idea.id + '\')" title="Supprimer">✕</button>' +
                     '</div>' +
                 '</div>' +
             '</div>';
@@ -643,15 +628,15 @@
         updateStats();
     }
 
-    // Delete
-    function deleteIdea(id) {
-        if (!confirm('Supprimer cette idée ?')) return;
-        ideas = ideas.filter(i => i.id !== id);
-        votedIds.delete(id);
-        localStorage.setItem('dap_voted_ids', JSON.stringify([...votedIds]));
-        save();
-        renderIdeas();
-        updateStats();
+    // Save (persist votes to OneDrive)
+    async function save() {
+        try {
+            await fetch(WEBHOOK_POST, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(ideas)
+            });
+        } catch(e) { /* silencieux */ }
     }
 
     // Stats
