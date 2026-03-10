@@ -316,8 +316,6 @@
             gap: 0.3rem;
         }
 
-        .idea-author { font-weight: 600; color: var(--text); }
-
         .idea-votes {
             display: flex;
             align-items: center;
@@ -370,18 +368,6 @@
         .idea-card:hover .delete-btn { opacity: 0.6; }
         .delete-btn:hover { opacity: 1 !important; background: #fff5f5; }
 
-        .btn-export {
-            padding: 0.4rem 0.8rem;
-            background: white;
-            border: 1.5px solid var(--border);
-            border-radius: 6px;
-            font-size: 0.8rem;
-            cursor: pointer;
-            color: var(--text-light);
-            transition: all 0.2s;
-        }
-
-        .btn-export:hover { border-color: var(--primary-light); color: var(--primary); }
 
         .sort-select {
             padding: 0.35rem 0.6rem;
@@ -497,7 +483,6 @@
                         <option value="recent">Plus récentes</option>
                         <option value="votes">Plus votées</option>
                     </select>
-                    <button class="btn-export" onclick="exportCSV()">📥 Exporter</button>
                 </div>
             </h2>
 
@@ -625,8 +610,7 @@
                 '<div class="idea-description">' + escapeHtml(idea.description) + '</div>' +
                 '<div class="idea-meta">' +
                     '<div>' +
-                        '<span class="idea-author">' + escapeHtml(idea.author) + '</span>' +
-                        ' · ' + idea.department + ' · ' + dateStr +
+                        idea.department + ' · ' + dateStr +
                         (idea.impact ? ' · ' + impactLabels[idea.impact] : '') +
                     '</div>' +
                     '<div class="idea-votes">' +
@@ -691,33 +675,6 @@
         }
         renderIdeas();
         updateStats();
-    }
-
-    // Export CSV
-    function exportCSV() {
-        if (ideas.length === 0) return alert('Aucune idée à exporter.');
-
-        const headers = ['Date', 'Auteur', 'Département', 'Catégorie', 'Titre', 'Description', 'Impact', 'Votes'];
-        const rows = ideas.map(i => [
-            new Date(i.date).toLocaleDateString('fr-BE'),
-            i.author,
-            i.department,
-            i.category,
-            i.title,
-            i.description.replace(/\n/g, ' '),
-            i.impact || '',
-            i.votes
-        ]);
-
-        const csv = [headers, ...rows]
-            .map(row => row.map(cell => '"' + String(cell).replace(/"/g, '""') + '"').join(';'))
-            .join('\n');
-
-        const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = 'boite-a-idees-dap-' + new Date().toISOString().slice(0, 10) + '.csv';
-        link.click();
     }
 
     // Escape HTML
