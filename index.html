@@ -409,7 +409,7 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label for="author">Votre nom</label>
-                        <input type="text" id="author" placeholder="Ex : Sophie M." required>
+                        <input type="text" id="author" placeholder="Ex : Sophie M." required maxlength="100">
                     </div>
                     <div class="form-group">
                         <label for="department">Département</label>
@@ -428,7 +428,7 @@
 
                 <div class="form-group">
                     <label for="title">Titre de l'idée</label>
-                    <input type="text" id="title" placeholder="Résumez votre idée en une phrase" required>
+                    <input type="text" id="title" placeholder="Résumez votre idée en une phrase" required maxlength="200">
                 </div>
 
                 <div class="form-group">
@@ -443,7 +443,7 @@
 
                 <div class="form-group">
                     <label for="description">Description du besoin</label>
-                    <textarea id="description" placeholder="Décrivez la situation actuelle, le problème rencontré et la solution que vous imaginez…" required></textarea>
+                    <textarea id="description" placeholder="Décrivez la situation actuelle, le problème rencontré et la solution que vous imaginez…" required maxlength="2000"></textarea>
                 </div>
 
                 <div class="form-group">
@@ -509,9 +509,19 @@
     // Init — charger les idées depuis OneDrive
     loadIdeas();
 
+    // Anti-spam : limiter à 1 soumission par minute
+    let lastSubmitTime = 0;
+
     // Submit
     form.addEventListener('submit', (e) => {
         e.preventDefault();
+
+        const now = Date.now();
+        if (now - lastSubmitTime < 60000) {
+            alert('Veuillez patienter une minute entre chaque soumission.');
+            return;
+        }
+        lastSubmitTime = now;
 
         const idea = {
             id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
@@ -610,33 +620,36 @@
     }
 
     // Vote
+    let voteInProgress = false;
     function toggleVote(id) {
+        if (voteInProgress) return;
         const idea = ideas.find(i => i.id === id);
         if (!idea) return;
 
+        voteInProgress = true;
+        let direction;
         if (votedIds.has(id)) {
             idea.votes = Math.max(0, idea.votes - 1);
             votedIds.delete(id);
+            direction = 'down';
         } else {
             idea.votes++;
             votedIds.add(id);
+            direction = 'up';
         }
 
         localStorage.setItem('dap_voted_ids', JSON.stringify([...votedIds]));
-        save();
         renderIdeas();
         updateStats();
-    }
 
-    // Save (persist votes to OneDrive)
-    async function save() {
-        try {
-            await fetch(WEBHOOK_POST, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(ideas)
-            });
-        } catch(e) { /* silencieux */ }
+        // Envoyer uniquement l'action de vote (pas toutes les idées)
+        fetch(WEBHOOK_POST, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'vote', id: id, direction: direction })
+        }).catch(() => {}).finally(() => {
+            setTimeout(() => { voteInProgress = false; }, 500);
+        });
     }
 
     // Stats
